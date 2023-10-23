@@ -2,7 +2,10 @@ package com.jesthercostinar.app.config;
 
 import com.jesthercostinar.app.listener.FirstJobListener;
 import com.jesthercostinar.app.listener.FirstStepListener;
+import com.jesthercostinar.app.processor.FirstItemProcessor;
+import com.jesthercostinar.app.reader.FirstItemReader;
 import com.jesthercostinar.app.service.SecondStep;
+import com.jesthercostinar.app.writer.FirstItemWriter;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.StepContribution;
@@ -35,7 +38,17 @@ public class SampleJob {
     @Autowired
     private FirstStepListener stepListener;
 
-    @Bean
+    @Autowired
+    private FirstItemReader firstItemReader;
+
+    @Autowired
+    private FirstItemProcessor firstItemProcessor;
+
+    @Autowired
+    private FirstItemWriter firstItemWriter;
+
+
+//    @Bean
     public Job firstJob() {
         return jobBuilderFactory.get("First Job")
                 .incrementer(new RunIdIncrementer())
@@ -67,4 +80,25 @@ public class SampleJob {
                 .tasklet(secondStep)
                 .build();
     }
+
+
+    @Bean
+    public Job secondJob() {
+        return jobBuilderFactory.get("Second Job")
+                .incrementer(new RunIdIncrementer())
+                .start(firstChunkStep())
+                .next(secondStep())
+                .build();
+    }
+
+    private Step firstChunkStep() {
+        return stepBuilderFactory.get("First Chunk Step")
+                .<Integer, Long>chunk(4)
+                .reader(firstItemReader)
+                .processor(firstItemProcessor)
+                .writer(firstItemWriter)
+                .build();
+    }
+
+
 }
